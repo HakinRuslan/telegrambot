@@ -1,0 +1,81 @@
+version: '3.12'
+
+services:
+  # bot:
+  #   build:
+  #     context: .
+  #     dockerfile: ./Dockerfile
+  #   restart: on-failure
+  #   # stop_signal: SIGINT
+  #   container_name: bot
+  #   environment:
+  #     BOT_PUBLIC_PORT: 80
+  #     TELEGRAM_TOKEN:
+  #     DOMAIN:
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: 6379
+  #     REDIS_DB_FSM:
+  #     REDIS_DB_JOBSTORE:
+  #     POSTGRES_HOST: postgres
+  #     POSTGRES_PORT: 5432
+  #     POSTGRES_PASSWORD:
+  #     POSTGRES_USER:
+  #     POSTGRES_DB:
+  
+  bot:
+    container_name: tg_bot
+    environment: 
+      user: postgres
+      password: example
+      host: pgsql
+      port: 5432 
+      database: blog
+      TOKEN: 7893709749:AAEm9vwAhjKGahZ_jcovybP7M-z_7i2OM3U
+      ADMINS: [5609164651, 1912539417]
+      url: postgresql+asyncpg://postgres:7830@localhost:5432/telegram_bot
+      db: telegram_bot
+      RABBITMQ_USERNAME: admin
+      RABBITMQ_PASSWORD: 7830
+      RABBITMQ_HOST: 127.0.0.1
+      RABBITMQ_PORT: 5672
+      VHOST: myapp_vhost
+    #image: example/database
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    # ports:
+    #     - '8000:8000'
+
+
+    postgres:
+      container_name: db
+      environment:
+        POSTGRES_PASSWORD: example
+        PGDATA: /var/lib/postgresql/data/pgdata
+      image: postgres:17
+      hostname: pgsql
+      restart: always
+      # set shared memory limit when using docker-compose
+      shm_size: 128mb
+      # or set shared memory limit when deploy via swarm stack
+      volumes:
+        - /opt/postgres2:/var/lib/postgresql/data/pgdata
+        
+      #  - type: tmpfs
+      #    target: /dev/shm
+      #    tmpfs:
+      #      size: 134217728 # 128*2^20 bytes = 128Mb
+      
+  rabbitmq:
+    image: rabbitmq:3.10.7-management
+    hostname: rabbitmq
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=7830
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit log_levels [{connection,error},{default,error}] disk_free_limit 2147483648
+    volumes:
+      - ./rabbitmq:/var/lib/rabbitmq
+    ports:
+      - 15672:15672
+      - 5672:5672
